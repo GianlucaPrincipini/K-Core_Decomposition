@@ -10,7 +10,5 @@ class Graph(graph: RDD[(Node, Node)]) {
   }
 
   def getDegrees() = distributedGraph.countByKey()
-  //def getDegree(node: Int): Long = {
-  //  distributedGraph.countByKey().getOrElse(new T(node), 0)
-  //}
+
 }

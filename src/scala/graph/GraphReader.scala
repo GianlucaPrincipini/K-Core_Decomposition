@@ -2,8 +2,9 @@ package graph
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
+import org.apache.spark.graphx.Edge
+import org.apache.spark.graphx._
 
-import scala.graph.{Graph, Node}
 
 object GraphReader {
   val sc = SparkContext.getOrCreate()
@@ -13,30 +14,25 @@ object GraphReader {
     * @param fileName
     * @return
     */
-  def readFile(fileName: String): Graph= {
-    val graph1 = sc.textFile(fileName).map(x => splitNode(x, false))
-    new Graph((graph1 ++ sc.textFile(fileName).map(x => splitNode(x, true))).distinct())
+  def readFile(fileName: String): Graph[VertexId, Int] = {
+    val graph1 = sc.textFile(fileName).map(x => split(x, false))
+    val undirectedGraph = graph1 ++ sc.textFile(fileName).map(x => split(x, true))
+    val keys = undirectedGraph.map(x => (x.srcId, x.srcId)).distinct()
+    Graph(keys, undirectedGraph, -1)
   }
 
   /**
-    * Da riga del file a tupla di interi
+    * Da riga del file a Edge di interi
     * @param line riga del file
     * @param inverted inverti la tupla
     * @return tupla di interi
     */
-  def split(line: String, inverted: Boolean): (Int, Int) = {
+  def split(line: String, inverted: Boolean): Edge[Int] = {
     val splitted = line.split(" ")
     if (inverted)
-      (splitted(1).toInt, splitted(0).toInt)
+      Edge(splitted(1).toLong, splitted(0).toLong, 0)
     else
-      (splitted(0).toInt, splitted(1).toInt)
+      Edge(splitted(0).toLong, splitted(1).toLong, 0)
   }
 
-  def splitNode(line: String, inverted: Boolean): (Node, Node) = {
-    val splitted = line.split(" ")
-    if (inverted)
-      (new Node(splitted(1).toInt), new Node(splitted(0).toInt))
-    else
-      (new Node(splitted(0).toInt), new Node(splitted(1).toInt))
-  }
 }

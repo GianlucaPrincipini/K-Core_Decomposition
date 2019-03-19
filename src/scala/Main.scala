@@ -1,4 +1,5 @@
 
+import graph.GraphReader
 import org.apache.spark._
 import org.apache.spark.SparkContext._
 import org.apache.spark.sql._
@@ -38,7 +39,7 @@ object Main {
   }
 
   /** Our main function where the action happens */
-  def main(args: Array[String]) {
+  def bfs() {
 
     // Set the log level to only print errors
     Logger.getLogger("org").setLevel(Level.ERROR)
@@ -103,5 +104,18 @@ object Main {
     // Recreate our "degrees of separation" result:
     println("\n\nDegrees from SpiderMan to ADAM 3,031") // ADAM 3031 is hero ID 14
     bfs.vertices.filter(x => x._1 == 14).collect.foreach(println)
+  }
+
+
+  def main(args: Array[String]) {
+    // Set the log level to only print errors
+    Logger.getLogger("org").setLevel(Level.ERROR)
+
+    // Create a SparkContext using every core of the local machine
+    val sc = new SparkContext("local[*]", "GraphX")
+
+    val fileName = "resources/facebook_combined.txt"
+    val graph = GraphReader.readFile(fileName)
+    graph.degrees.sortBy(x => x._2, ascending = false).take(10).foreach(println)
   }
 }

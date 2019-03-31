@@ -1,7 +1,6 @@
 
 package scala.graph
 
-import graph.GraphReader.{sc, splitNode}
 import org.apache.spark.SparkContext
 import org.apache.spark.graphx.Edge
 

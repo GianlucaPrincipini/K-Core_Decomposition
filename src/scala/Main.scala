@@ -7,6 +7,9 @@ import org.apache.log4j._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.graphx._
 
+import scala.graph.KCoreVertex
+
+
 
 object Main {
 
@@ -74,6 +77,7 @@ object Main {
     // Initialize each node with a distance of infinity, unless it's our starting point
     val initialGraph = graph.mapVertices((id, _) => if (id == root) 0.0 else Double.PositiveInfinity)
 
+
     // Now the Pregel magic
     val bfs = initialGraph.pregel(Double.PositiveInfinity, 10)(
       // Our "vertex program" preserves the shortest distance
@@ -106,6 +110,9 @@ object Main {
     bfs.vertices.filter(x => x._1 == 14).collect.foreach(println)
   }
 
+  def max(a: (VertexId, Int), b: (VertexId, Int)): (VertexId, Int) = {
+    if (a._2 > b._2) a else b
+  }
 
   def main(args: Array[String]) {
     // Set the log level to only print errors
@@ -113,9 +120,8 @@ object Main {
 
     // Create a SparkContext using every core of the local machine
     val sc = new SparkContext("local[*]", "GraphX")
-
     val fileName = "resources/facebook_combined.txt"
     val graph = GraphReader.readFile(fileName)
-    graph.degrees.sortBy(x => x._2, ascending = false).take(10).foreach(println)
+
   }
 }

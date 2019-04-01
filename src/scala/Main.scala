@@ -7,6 +7,8 @@ import org.apache.log4j._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.graphx._
 
+import scala.collection.Map
+import scala.collection.immutable.HashMap
 import scala.graph.KCoreVertex
 
 
@@ -76,7 +78,7 @@ object Main {
 
     // Initialize each node with a distance of infinity, unless it's our starting point
     val initialGraph = graph.mapVertices((id, _) => if (id == root) 0.0 else Double.PositiveInfinity)
-
+    initialGraph
 
     // Now the Pregel magic
     val bfs = initialGraph.pregel(Double.PositiveInfinity, 10)(
@@ -114,6 +116,24 @@ object Main {
     if (a._2 > b._2) a else b
   }
 
+  def vertexProgram(id: VertexId, attr: KCoreVertex, msg: Map[VertexId, Int]) = {
+
+    attr
+
+  }
+
+  def sendMessage(triplet: EdgeTriplet[KCoreVertex, Map[VertexId, Int]]) = {
+    if (triplet.srcAttr.updated) {
+      Iterator((triplet.dstId, Map(triplet.srcAttr.nodeId -> triplet.srcAttr.coreness)))
+    } else {
+      Iterator.empty
+    }
+  }
+
+  def mergeMessages(msg1: Map[VertexId, Int], msg2: Map[VertexId, Int]) = {
+    msg1 ++ msg2
+  }
+
   def main(args: Array[String]) {
     // Set the log level to only print errors
     Logger.getLogger("org").setLevel(Level.ERROR)
@@ -122,6 +142,13 @@ object Main {
     val sc = new SparkContext("local[*]", "GraphX")
     val fileName = "resources/facebook_combined.txt"
     val graph = GraphReader.readFile(fileName)
-
+    val firstMessage = graph.vertices.collect()(0)
+    val dummyMessage: Map[VertexId, Int] = Map(Long.MinValue -> -1)
+    val kcore = graph.pregel(dummyMessage)(
+      (id, attr, msg) => vertexProgram(id, attr, msg),
+      triplet => sendMessage(triplet),
+      (coreness1, coreness2) => mergeMessages(coreness1, coreness2)
+    )
+    graph.vertices.collect()
   }
 }

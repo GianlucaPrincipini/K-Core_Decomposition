@@ -7,6 +7,7 @@ import org.apache.spark.graphx._
 
 import scala.graph.KCoreVertex
 import scala.collection.Map
+import scala.collection.immutable.HashMap
 
 object GraphReader {
   val sc = SparkContext.getOrCreate()
@@ -19,24 +20,26 @@ object GraphReader {
     * @param degreesMap
     * @return
     */
-  def initializeKCoreVertex(vertex: KCoreVertex, degreesMap: Map[VertexId, Int]) = {
-    vertex.coreness = degreesMap.getOrElse(vertex.nodeId, -1)
-    vertex.est = new Array[Int](vertex.coreness).map(_ => Int.MaxValue)
+  def initializeKCoreVertex(vertex: KCoreVertex, neighbors: Map[VertexId, Array[VertexId]]) = {
+    vertex.est = new HashMap[VertexId, Int]()
+    val vertexNeighbors = neighbors.getOrElse(vertex.nodeId, null)
+    vertexNeighbors.foreach(neighborId => vertex.est ++= Map(neighborId -> Int.MaxValue))
+    vertex.coreness = vertex.est.keys.size
     vertex
   }
 
   /**
-    * Nel file le associazioni sono monodirezionali, per rendere bidirezionale ogni arco abbiamo ripetuto la procedura su
+    * Nel file Bothle associazioni sono monodirezionali, per rendere bidirezionale ogni arco abbiamo ripetuto la procedura su
     * @param fileName
     * @return
     */
-  def readFile(fileName: String): Graph[KCoreVertex, Int] = {
+  def readFile(fileName: String): Graph[KCoreVertex, Map[VertexId, Int]] = {
     val graph1 = sc.textFile(fileName).map(x => split(x, false))
     val undirectedGraph = graph1 ++ sc.textFile(fileName).map(x => split(x, true))
     val keys: RDD[(VertexId, KCoreVertex)] = undirectedGraph.map(x => (x.srcId, new KCoreVertex(x.srcId))).distinct()
-    val graph = Graph[KCoreVertex, Int](keys, undirectedGraph)
-    val degreesMap = graph.degrees.collectAsMap()
-    val retGraph = graph.mapVertices((vertexId, vertexStruct) => initializeKCoreVertex(vertexStruct, degreesMap))
+    val graph = Graph[KCoreVertex, Map[VertexId, Int]](keys, undirectedGraph)
+    val neighbors = graph.collectNeighborIds(EdgeDirection.Either).collectAsMap()
+    val retGraph = graph.mapVertices((vertexId, vertexStruct) => initializeKCoreVertex(vertexStruct, neighbors))
     retGraph
   }
 
@@ -46,12 +49,11 @@ object GraphReader {
     * @param inverted inverti la tupla
     * @return tupla di interi
     */
-  def split(line: String, inverted: Boolean): Edge[Int] = {
+  def split(line: String, inverted: Boolean): Edge[Map[VertexId, Int]] = {
     val splitted = line.split(" ")
-
     if (inverted)
-      Edge(splitted(1).toLong, splitted(0).toLong, 0)
+      Edge(splitted(1).toLong, splitted(0).toLong, Map(splitted(1).toLong -> Int.MaxValue))
     else
-      Edge(splitted(0).toLong, splitted(1).toLong, 0)
+      Edge(splitted(0).toLong, splitted(1).toLong, Map(splitted(0).toLong -> Int.MaxValue))
   }
 }

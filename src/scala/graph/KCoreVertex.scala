@@ -4,9 +4,8 @@ import org.apache.spark.graphx.VertexId
 
 class KCoreVertex(id: VertexId) extends Serializable {
   val nodeId = id
-  var updated = false
-  var woke = false
-  var est: Array[Int] = null
+  var updated = true
+  var est: Map[VertexId, Int] = null
   var coreness = 0
 
   override def hashCode(): Int = nodeId.toInt
@@ -19,4 +18,6 @@ class KCoreVertex(id: VertexId) extends Serializable {
     }
 
   override def toString: String = nodeId + ": " + coreness
+
+
 }

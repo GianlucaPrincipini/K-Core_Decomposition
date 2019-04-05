@@ -4,7 +4,7 @@ import org.apache.spark.graphx.VertexId
 
 class KCoreVertex(id: VertexId) extends Serializable {
   val nodeId = id
-  var updated = true
+  var updated = false
   var est: Map[VertexId, Int] = null
   var coreness = 0
 

@@ -29,7 +29,7 @@ object GraphReader {
   }
 
   /**
-    * Nel file Bothle associazioni sono monodirezionali, per rendere bidirezionale ogni arco abbiamo ripetuto la procedura su
+    * Nel file le associazioni sono monodirezionali, per rendere bidirezionale ogni arco abbiamo ripetuto la procedura su
     * @param fileName
     * @return
     */
@@ -38,7 +38,7 @@ object GraphReader {
     val undirectedGraph = graph1 ++ sc.textFile(fileName).map(x => split(x, true))
     val keys: RDD[(VertexId, KCoreVertex)] = undirectedGraph.map(x => (x.srcId, new KCoreVertex(x.srcId))).distinct()
     val graph = Graph[KCoreVertex, Map[VertexId, Int]](keys, undirectedGraph)
-    val neighbors = graph.collectNeighborIds(EdgeDirection.Either).collectAsMap()
+    val neighbors = graph.collectNeighborIds(EdgeDirection.Out).collectAsMap()
     val retGraph = graph.mapVertices((vertexId, vertexStruct) => initializeKCoreVertex(vertexStruct, neighbors))
     retGraph
   }

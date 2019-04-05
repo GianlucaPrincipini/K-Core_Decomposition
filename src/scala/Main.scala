@@ -14,6 +14,7 @@ import scala.graph.KCoreVertex
 
 
 object Main {
+  val dummyMessage: Map[VertexId, Int] = Map(Long.MinValue -> -1)
 
   // Function to extract hero ID -> hero name tuples (or None in case of failure)
   def parseNames(line: String) : Option[(VertexId, String)] = {
@@ -117,13 +118,15 @@ object Main {
   }
 
   def vertexProgram(id: VertexId, attr: KCoreVertex, msg: Map[VertexId, Int]) = {
-
+    if (id == 1544) {
+    println("Messaggi ricevuti da " + id)
+    msg.foreach(println)
+  }
     attr
-
   }
 
   def sendMessage(triplet: EdgeTriplet[KCoreVertex, Map[VertexId, Int]]) = {
-    if (triplet.srcAttr.updated) {
+    if (triplet.srcAttr.updated || triplet.attr == dummyMessage) {
       Iterator((triplet.dstId, Map(triplet.srcAttr.nodeId -> triplet.srcAttr.coreness)))
     } else {
       Iterator.empty
@@ -138,17 +141,20 @@ object Main {
     // Set the log level to only print errors
     Logger.getLogger("org").setLevel(Level.ERROR)
 
+    val k = 5
     // Create a SparkContext using every core of the local machine
     val sc = new SparkContext("local[*]", "GraphX")
     val fileName = "resources/facebook_combined.txt"
     val graph = GraphReader.readFile(fileName)
-    val firstMessage = graph.vertices.collect()(0)
-    val dummyMessage: Map[VertexId, Int] = Map(Long.MinValue -> -1)
-    val kcore = graph.pregel(dummyMessage)(
+    val kcore = graph.pregel(dummyMessage, maxIterations = k)(
       (id, attr, msg) => vertexProgram(id, attr, msg),
       triplet => sendMessage(triplet),
       (coreness1, coreness2) => mergeMessages(coreness1, coreness2)
     )
-    graph.vertices.collect()
+    kcore.vertices.collect()
+
+    // println("Grado di 1544")
+    // println(graph.collectNeighborIds(EdgeDirection.In).distinct().filter(x => x._1 == 1544).collect().foreach(_._2.foreach(println)))
+
   }
 }

@@ -118,12 +118,28 @@ object Main {
   }
 
   def vertexProgram(id: VertexId, attr: KCoreVertex, msg: Map[VertexId, Int]) = {
-    if (id == 1544) {
-    println("Messaggi ricevuti da " + id)
-    msg.foreach(println)
-  }
+
+    if (msg != dummyMessage) {
+      attr.updated = false
+      msg.foreach(tuple => {
+        // TODO verificare
+        if (tuple._2 <= attr.est.get(tuple._1).get) {
+          attr.est = attr.est + (tuple._1 -> tuple._2)
+          if (id == "1544")
+            println(attr.est)
+          val t = attr.computeIndex()
+          if (t < attr.coreness) {
+            attr.coreness = t
+            attr.updated = true
+          }
+        }
+      })
+    } else {
+      attr.updated = true
+    }
     attr
   }
+
 
   def sendMessage(triplet: EdgeTriplet[KCoreVertex, Map[VertexId, Int]]) = {
     if (triplet.srcAttr.updated || triplet.attr == dummyMessage) {
@@ -141,7 +157,7 @@ object Main {
     // Set the log level to only print errors
     Logger.getLogger("org").setLevel(Level.ERROR)
 
-    val k = 5
+    val k = 50
     // Create a SparkContext using every core of the local machine
     val sc = new SparkContext("local[*]", "GraphX")
     val fileName = "resources/facebook_combined.txt"
@@ -151,8 +167,8 @@ object Main {
       triplet => sendMessage(triplet),
       (coreness1, coreness2) => mergeMessages(coreness1, coreness2)
     )
-    kcore.vertices.collect()
-
+    kcore.vertices.collect().take(10).foreach(x => println((x._1, x._2.coreness)))
+    // println(graph.outDegrees.filter(x => x._1 == 1328).collect()(0))
     // println("Grado di 1544")
     // println(graph.collectNeighborIds(EdgeDirection.In).distinct().filter(x => x._1 == 1544).collect().foreach(_._2.foreach(println)))
 

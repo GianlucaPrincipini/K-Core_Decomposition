@@ -43,11 +43,21 @@ object GraphReader {
     retGraph
   }
 
+  /**
+    * Metodo di supporto per la gestione di un file di test, come split
+    * @param str
+    * @return
+    */
   def splitAlpha(str: String) = {
     val splitted = str.split(" ")
     (splitted(0).toLong, splitted(1))
   }
 
+  /**
+    * Metodo di supporto per la gestione di un file di test, come redFile
+    * @param fileName il percorso del file di supporto
+    * @return una versione elaborabile del grafo descritto dal file
+    */
   def readAlpha(fileName: String) = {
     sc.textFile(fileName).map(x => splitAlpha(x))
   }

@@ -153,21 +153,27 @@ object Main {
     msg1 ++ msg2
   }
 
+  def readAlpha(): Unit = {
+
+  }
+
   def main(args: Array[String]) {
     // Set the log level to only print errors
     Logger.getLogger("org").setLevel(Level.ERROR)
 
-    val k = 50
+    val k = 1
     // Create a SparkContext using every core of the local machine
     val sc = new SparkContext("local[*]", "GraphX")
-    val fileName = "resources/facebook_combined.txt"
+    val fileName = "resources/kcoreTestDataset.txt"
     val graph = GraphReader.readFile(fileName)
     val kcore = graph.pregel(dummyMessage, maxIterations = k)(
       (id, attr, msg) => vertexProgram(id, attr, msg),
       triplet => sendMessage(triplet),
       (coreness1, coreness2) => mergeMessages(coreness1, coreness2)
     )
-    kcore.vertices.collect().take(10).foreach(x => println((x._1, x._2.coreness)))
+    val alpha = GraphReader.readAlpha("resources/mappingAlphaIndex.txt")
+
+    kcore.vertices.join(alpha).collect().take(15).sortBy(_._1).foreach(x => println(x._2._2, x._2._1.coreness))
     // println(graph.outDegrees.filter(x => x._1 == 1328).collect()(0))
     // println("Grado di 1544")
     // println(graph.collectNeighborIds(EdgeDirection.In).distinct().filter(x => x._1 == 1544).collect().foreach(_._2.foreach(println)))

@@ -43,6 +43,15 @@ object GraphReader {
     retGraph
   }
 
+  def splitAlpha(str: String) = {
+    val splitted = str.split(" ")
+    (splitted(0).toLong, splitted(1))
+  }
+
+  def readAlpha(fileName: String) = {
+    sc.textFile(fileName).map(x => splitAlpha(x))
+  }
+
   /**
     * Da riga del file a Edge di interi
     * @param line riga del file

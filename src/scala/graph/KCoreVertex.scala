@@ -20,19 +20,19 @@ class KCoreVertex(id: VertexId) extends Serializable {
     }
 
   def computeIndex() = {
-    val count = Array.fill[Int](this.coreness)(0)
+    val count = Array.fill[Int](this.coreness + 1)(0)
     est.foreach(tuple => {
-      val j = Math.min(coreness, tuple._2) - 1
+      val j = Math.min(coreness, tuple._2)
       count(j) = count(j) + 1
     })
     var i = coreness
     while (i > 2) {
-      count(i - 2) = count(i - 2) + count(i-1)
+      count(i - 1) = count(i - 1) + count(i)
       i = i - 1
     }
     i = coreness
-    while (i > 1 && count(i-1) < i-1) {
-      i = i - 2
+    while (i > 1 && count(i) < i) {
+      i = i - 1
     }
     i
   }

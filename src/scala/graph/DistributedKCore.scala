@@ -2,16 +2,9 @@ package graph
 
 import org.apache.spark.graphx.{EdgeTriplet, VertexId}
 
-import scala.collection.Map
-import scala.graph.KCoreVertex
-import org.apache.spark.graphx._
-import org.apache.spark.SparkContext._
-import org.apache.spark.sql._
-import org.apache.spark.rdd.RDD
-import org.apache.spark.graphx._
 
+import org.apache.spark.graphx._
 import scala.collection.Map
-import scala.collection.immutable.HashMap
 import scala.graph.KCoreVertex
 
 

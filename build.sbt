@@ -1,4 +1,4 @@
-name := "K-Core_Decomposition"
+name := "KCoreDecomposition"
 
 version := "0.1"
 

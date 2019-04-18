@@ -32,12 +32,14 @@ class KCoreVertex(id: VertexId) extends Serializable {
     est.foreach(tuple => {
       val j = Math.min(coreness, tuple._2)
       count(j) = count(j) + 1
-    }//nel vettore di supporto conto quante occorrenze ci sono con lo stesso valore dell'indice
+    })
+    //nel vettore di supporto conto quante occorrenze ci sono con lo stesso valore dell'indice
     var i = coreness
     while (i > 2) {
       count(i - 1) = count(i - 1) + count(i)
       i = i - 1
-    }//eseguo una somma prefissa inversa sul vettore di supporto
+    }
+    //eseguo una somma prefissa inversa sul vettore di supporto
     i = coreness
     while (i > 1 && count(i) < i) {
       i = i - 1

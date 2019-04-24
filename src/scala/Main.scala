@@ -20,7 +20,7 @@ object Main {
     Logger.getLogger("org").setLevel(Level.ERROR)
 
     // Create a SparkContext using every core of the local machine
-    val sc = SparkSession.builder().appName("KCoreDecomposition").master("local[*]").getOrCreate()
+    val sc = SparkSession.builder().appName("KCoreDecomposition").master(master).getOrCreate()
     val maxIterations = 10
     val graph = GraphReader.readFile(fileName)
     val kCore = DistributedKCore.decomposeGraph(graph, maxIterations)

@@ -8,19 +8,15 @@ object Main {
 
   def main(args: Array[String]) {
     var fileName = "resources/kcoreTestDataset.txt"
-    var master = "local[*]"
     if (args.size > 0) {
       fileName = args(0)
-    }
-    if (args.size > 1) {
-      master = args(1)
     }
 
     // Set the log level to only print errors
     Logger.getLogger("org").setLevel(Level.ERROR)
 
     // Create a SparkContext using every core of the local machine
-    val sc = SparkSession.builder().appName("KCoreDecomposition").master(master).getOrCreate()
+    val sc = SparkSession.builder().appName("KCoreDecomposition").getOrCreate()
     val maxIterations = 10
     val graph = GraphReader.readFile(fileName)
     val kCore = DistributedKCore.decomposeGraph(graph, maxIterations)

@@ -4,13 +4,14 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
 import org.apache.spark.graphx.Edge
 import org.apache.spark.graphx._
+import org.apache.spark.sql.SparkSession
 
 import scala.graph.KCoreVertex
 import scala.collection.Map
 import scala.collection.immutable.HashMap
 
 object GraphReader {
-  val sc = SparkContext.getOrCreate()
+  val sc = SparkSession.builder().getOrCreate().sparkContext
 
 
   /**
@@ -34,8 +35,10 @@ object GraphReader {
     * @return
     */
   def readFile(fileName: String): Graph[KCoreVertex, Map[VertexId, Int]] = {
+    println("Loading: " + fileName)
+
     val graph1 = sc.textFile(fileName).map(x => split(x, false))
-    val undirectedGraph = graph1 ++ sc.textFile(fileName).map(x => split(x, true))
+    val undirectedGraph = graph1.union(sc.textFile(fileName).map(x => split(x, true)))
     val keys: RDD[(VertexId, KCoreVertex)] = undirectedGraph.map(x => (x.srcId, new KCoreVertex(x.srcId))).distinct()
     val graph = Graph[KCoreVertex, Map[VertexId, Int]](keys, undirectedGraph)
     val neighbors = graph.collectNeighborIds(EdgeDirection.Out).collectAsMap()

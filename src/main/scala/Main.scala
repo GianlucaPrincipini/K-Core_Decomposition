@@ -7,7 +7,8 @@ import org.apache.spark.sql.SparkSession
 object Main {
 
   def main(args: Array[String]) {
-    var fileName = "s3n://kcoredecompositionbucket/facebook_combined.txt"
+    // var fileName = "../../resources/facebook_combined.txt"
+    var fileName = "s3n://scpproject/facebook_combined.txt"
     println("Size: " + args.size)
     if (args.size > 0) {
       fileName = args(0)

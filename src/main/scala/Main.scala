@@ -24,7 +24,7 @@ object Main {
     }
     val sc = sessionBuilder.getOrCreate()
     val maxIterations = 10
-    val graph = GraphReader.readFile(fileName)
+    val graph = new GraphReader().readFile(fileName)
     val kCore = DistributedKCore.decomposeGraph(graph, maxIterations)
     kCore.vertices.collect().take(15).sortBy(_._1).foreach(x => println(x._2))
     sc.close()

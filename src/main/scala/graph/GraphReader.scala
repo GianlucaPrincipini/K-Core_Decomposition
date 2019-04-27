@@ -10,7 +10,7 @@ import scala.graph.KCoreVertex
 import scala.collection.Map
 import scala.collection.immutable.HashMap
 
-object GraphReader {
+class GraphReader extends java.io.Serializable{
   val sc = SparkSession.builder().getOrCreate().sparkContext
 
 

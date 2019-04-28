@@ -6,27 +6,31 @@ import org.apache.spark.sql.SparkSession
 
 object Main {
 
-  def main(args: Array[String]) {
-    // var fileName = "../../resources/facebook_combined.txt"
-    var fileName = "s3n://scpproject/facebook_combined.txt"
-    println("Size: " + args.size)
-    if (args.size > 0) {
-      fileName = args(0)
-    }
+  val files = Map("facebook" -> "s3n://scpproject/facebook_combined.txt", "pokec" -> "s3n://scpproject/facebook_combined.txt", "livejournal" -> "s3n://scpproject/facebook_combined.txt")
 
+
+  def main(args: Array[String]) {
+    var currentFile = "facebook"
+    // var fileName = "resources/facebook_combined.txt"
+    if (args.size > 0) {
+      currentFile = args(0)
+    }
+    var fileName = files.get(currentFile).get
     // Set the log level to only print errors
-    Logger.getLogger("org").setLevel(Level.ERROR)
+    // Logger.getLogger("org").setLevel(Level.ERROR)
 
     // Create a SparkContext using every core of the local machine
     var sessionBuilder = SparkSession.builder().appName("KCoreDecomposition")
+
+
     if (args.size > 1) {
       sessionBuilder = sessionBuilder.master(args(1))
     }
-    val sc = sessionBuilder.getOrCreate()
+    val session = sessionBuilder.getOrCreate()
     val maxIterations = 10
-    val graph = GraphReader.readFile(fileName)
+    val graph = new GraphReader().readFile(fileName, session.sparkContext)
     val kCore = DistributedKCore.decomposeGraph(graph, maxIterations)
-    kCore.vertices.collect().take(15).sortBy(_._1).foreach(x => println(x._2))
-    sc.close()
+    kCore.vertices.sortBy(_._2.coreness).saveAsTextFile("s3n://scpproject/output_" + currentFile + ".txt")
+    session.close()
   }
 }

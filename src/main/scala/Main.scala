@@ -6,7 +6,7 @@ import org.apache.spark.sql.SparkSession
 
 object Main {
 
-  val files = Map("facebook" -> "s3n://scpproject/facebook_combined.txt", "pokec" -> "s3n://scpproject/facebook_combined.txt", "livejournal" -> "s3n://scpproject/facebook_combined.txt")
+  val files = Map("facebook" -> "s3n://scpproject/facebook.txt", "pokec" -> "s3n://scpproject/pokec.txt", "livejournal" -> "s3n://scpproject/livejournal.txt")
 
 
   def main(args: Array[String]) {

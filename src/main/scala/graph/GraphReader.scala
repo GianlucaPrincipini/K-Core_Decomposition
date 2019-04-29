@@ -10,9 +10,7 @@ import scala.graph.KCoreVertex
 import scala.collection.Map
 import scala.collection.immutable.HashMap
 
-class GraphReader extends java.io.Serializable{
-  val sc = SparkSession.builder().getOrCreate().sparkContext
-
+class GraphReader extends Serializable {
 
   /**
     * Inizializzazione del KCoreVertex, la coreness iniziale è il suo grado.
@@ -34,10 +32,10 @@ class GraphReader extends java.io.Serializable{
     * @param fileName
     * @return
     */
-  def readFile(fileName: String): Graph[KCoreVertex, Map[VertexId, Int]] = {
+  def readFile(fileName: String, sc: SparkContext): Graph[KCoreVertex, Map[VertexId, Int]] = {
     println("Loading: " + fileName)
-
-    val graph1 = sc.textFile(fileName).map(x => split(x, false))
+    val file = sc.textFile(fileName).cache()
+    val graph1 = file.map(x => split(x, false))
     val undirectedGraph = graph1.union(sc.textFile(fileName).map(x => split(x, true)))
     val keys: RDD[(VertexId, KCoreVertex)] = undirectedGraph.map(x => (x.srcId, new KCoreVertex(x.srcId))).distinct()
     val graph = Graph[KCoreVertex, Map[VertexId, Int]](keys, undirectedGraph)
@@ -46,24 +44,6 @@ class GraphReader extends java.io.Serializable{
     retGraph
   }
 
-  /**
-    * Metodo di supporto per la gestione di un file di test, come split
-    * @param str
-    * @return
-    */
-  def splitAlpha(str: String) = {
-    val splitted = str.split(" ")
-    (splitted(0).toLong, splitted(1))
-  }
-
-  /**
-    * Metodo di supporto per la gestione di un file di test, come redFile
-    * @param fileName il percorso del file di supporto
-    * @return una versione elaborabile del grafo descritto dal file
-    */
-  def readAlpha(fileName: String) = {
-    sc.textFile(fileName).map(x => splitAlpha(x))
-  }
 
   /**
     * Da riga del file a Edge di interi
@@ -73,9 +53,11 @@ class GraphReader extends java.io.Serializable{
     */
   def split(line: String, inverted: Boolean): Edge[Map[VertexId, Int]] = {
     val splitted = line.split(" ")
-    if (inverted)
-      Edge(splitted(1).toLong, splitted(0).toLong, Map(splitted(1).toLong -> Int.MaxValue))
-    else
-      Edge(splitted(0).toLong, splitted(1).toLong, Map(splitted(0).toLong -> Int.MaxValue))
+    if (inverted){
+      new Edge(splitted(1).toLong, splitted(0).toLong, Map(splitted(1).toLong -> Int.MaxValue))
+    }
+    else {
+      new Edge(splitted(0).toLong, splitted(1).toLong, Map(splitted(0).toLong -> Int.MaxValue))
+    }
   }
 }

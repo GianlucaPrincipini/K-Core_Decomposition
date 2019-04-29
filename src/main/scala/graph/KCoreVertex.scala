@@ -9,6 +9,7 @@ class KCoreVertex(id: VertexId) extends Serializable {
   var updated = false
   var est: Map[VertexId, Int] = null
   var coreness = 0
+  var receivedMsg = 0
 
   override def hashCode(): Int = nodeId.toInt
 
@@ -53,5 +54,7 @@ class KCoreVertex(id: VertexId) extends Serializable {
     */
   override def toString: String = nodeId + ": " + coreness
 
-
+  def incReceived(dim: Int) = {
+    receivedMsg = receivedMsg + dim
+  }
 }

@@ -32,6 +32,9 @@ object Main {
     val graph = new GraphReader().readFile(fileName, session.sparkContext)
     val kCore = DistributedKCore.decomposeGraph(graph, maxIterations)
     kCore.vertices.sortBy(_._2.coreness).saveAsTextFile("s3n://scpproject/output_" + currentFile + ".txt")
+    var totmsg = 0
+    graph.vertices.foreach(x => totmsg = totmsg + x._2.receivedMsg)
+    print("Total messages in thi execution = " + totmsg)
     session.close()
   }
 }

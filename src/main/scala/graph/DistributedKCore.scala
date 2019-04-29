@@ -36,6 +36,7 @@ object DistributedKCore {
   def vertexProgram(id: VertexId, attr: KCoreVertex, msg: Map[VertexId, Int]) = {
     if (msg != dummyMessage) {
       attr.updated = false
+      attr.incReceived(msg.size)
       msg.foreach(tuple => {
         if (tuple._2 <= attr.est.get(tuple._1).get) {
           attr.est = attr.est + (tuple._1 -> tuple._2)

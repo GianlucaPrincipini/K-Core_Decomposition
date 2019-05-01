@@ -56,5 +56,8 @@ class KCoreVertex(id: VertexId) extends Serializable {
 
   def incReceived(dim: Int) = {
     receivedMsg = receivedMsg + dim
+    if(nodeId == 22){
+      print(receivedMsg)
+    }
   }
 }

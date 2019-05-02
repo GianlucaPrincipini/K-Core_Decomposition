@@ -34,14 +34,16 @@ object DistributedKCore {
     * @return l'oggetto del nodo, aggiornato
     */
   def vertexProgram(id: VertexId, attr: KCoreVertex, msg: Map[VertexId, Int]) = {
-    if (msg != dummyMessage) {
-      attr.updated = false
+    attr.updated = false
+    if (msg != dummyMessage && msg.size > 0) {
       attr.incReceived(msg.size)
       msg.foreach(tuple => {
-        if (tuple._2 <= attr.est.get(tuple._1).get) {
+        // Se la nuova stima è più bassa di quella presente
+        if (tuple._2 < attr.est.get(tuple._1).get) {
           attr.est = attr.est + (tuple._1 -> tuple._2)
           val computedCoreness = attr.computeIndex()
           if (computedCoreness < attr.coreness) {
+            attr.oldCoreness = attr.coreness
             attr.coreness = computedCoreness
             attr.updated = true
           }
@@ -49,6 +51,9 @@ object DistributedKCore {
       })
     } else {
       attr.updated = true
+    }
+    if (id == 13) {
+      println("sono dentro " + attr.updated + " " + attr.objId)
     }
     attr
   }
@@ -59,7 +64,11 @@ object DistributedKCore {
     * @return un iteratore sulla struttura contenente i messaggi
     */
   def sendMessage(triplet: EdgeTriplet[KCoreVertex, Map[VertexId, Int]]) = {
-    if (triplet.srcAttr.updated || triplet.attr == dummyMessage) {
+    if (triplet.srcAttr.oldCoreness != triplet.srcAttr.coreness || triplet.attr == dummyMessage) {
+      if (triplet.srcAttr.nodeId == 13) {
+        println(triplet.srcAttr.oldCoreness)
+        println(triplet.srcAttr.coreness)
+      }
       Iterator((triplet.dstId, Map(triplet.srcAttr.nodeId -> triplet.srcAttr.coreness)))
     } else {
       Iterator.empty
@@ -83,7 +92,7 @@ object DistributedKCore {
     * @return il grafo a computazione eseguita
     */
   def decomposeGraph(graph: Graph[KCoreVertex, Map[VertexId, Int]], maxIterations: Int) = {
-    graph.pregel(dummyMessage, maxIterations = maxIterations)(
+    graph.pregel(dummyMessage, maxIterations = maxIterations, EdgeDirection.In)(
       (id, attr, msg) => vertexProgram(id, attr, msg),
       triplet => sendMessage(triplet),
       (coreness1, coreness2) => mergeMessages(coreness1, coreness2)

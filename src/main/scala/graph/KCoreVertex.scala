@@ -19,15 +19,16 @@ class KCoreVertex(id: VertexId) extends Serializable {
   var receivedMsg = 0
   var iterationToConverge = 0
 
-  override def hashCode(): Int = nodeId.toInt
+  // override def hashCode(): Int = nodeId.toInt
 
-  def canEqual(a: Any): Boolean = a.isInstanceOf[KCoreVertex]
+  // def canEqual(a: Any): Boolean = a.isInstanceOf[KCoreVertex]
+/*
   override def equals(that: Any): Boolean =
     that match {
       case that: KCoreVertex  => that.canEqual(this) && this.nodeId == that.nodeId
       case _ => false
     }
-
+*/
   /**
     * Stima la coreness di un nodo, date le stime dei suoi vicini.
     * L'algoritmo si basa sulla proprietà di localita' secondo cui sono sufficienti
@@ -60,7 +61,7 @@ class KCoreVertex(id: VertexId) extends Serializable {
     * Informazioni che caratterizzano il nodo: identificativo e coreness
     * @return
     */
-  // override def toString: String = "\tCoreness:\t" + coreness + "\tReceived messages:\t" + receivedMsg + "\tDegree:\t" + est.size + "\tIterations to converge:\t" + iterationToConverge + "\tupdated: " + updated
+  override def toString: String = "\tCoreness:\t" + coreness + "\tReceived messages:\t" + receivedMsg + "\tDegree:\t" + est.size + "\tIterations to converge:\t" + iterationToConverge + "\tupdated: " + updated
 
   def incReceived(dim: Int) = {
     receivedMsg = receivedMsg + dim

@@ -34,28 +34,35 @@ object DistributedKCore {
     * @return l'oggetto del nodo, aggiornato
     */
   def vertexProgram(id: VertexId, attr: KCoreVertex, msg: Map[VertexId, Int]) = {
-    attr.updated = false
+    val nVertex = new KCoreVertex(id)
+    nVertex.updated = false
+    nVertex.oldCoreness = attr.oldCoreness
+    nVertex.coreness = attr.coreness
+    nVertex.receivedMsg = attr.receivedMsg
+    nVertex.est = attr.est
+    nVertex.iterationToConverge = attr.iterationToConverge
+    
     if (msg != dummyMessage && msg.size > 0) {
-      attr.incReceived(msg.size)
+      nVertex.incReceived(msg.size)
       msg.foreach(tuple => {
         // Se la nuova stima è più bassa di quella presente
-        if (tuple._2 < attr.est.get(tuple._1).get) {
-          attr.est = attr.est + (tuple._1 -> tuple._2)
-          val computedCoreness = attr.computeIndex()
-          if (computedCoreness < attr.coreness) {
-            attr.oldCoreness = attr.coreness
-            attr.coreness = computedCoreness
-            attr.updated = true
+        if (tuple._2 < nVertex.est.get(tuple._1).get) {
+          nVertex.est = nVertex.est + (tuple._1 -> tuple._2)
+          val computedCoreness = nVertex.computeIndex()
+          if (computedCoreness < nVertex.coreness) {
+            nVertex.oldCoreness = nVertex.coreness
+            nVertex.coreness = computedCoreness
+            nVertex.updated = true
           }
         }
       })
     } else {
-      attr.updated = true
+      nVertex.updated = true
     }
-    if (id == 13) {
-      println("sono dentro " + attr.updated + " " + attr.objId)
+    if (nVertex.updated) {
+      nVertex.iterationToConverge = nVertex.iterationToConverge + 1
     }
-    attr
+    nVertex
   }
 
   /**
@@ -64,11 +71,7 @@ object DistributedKCore {
     * @return un iteratore sulla struttura contenente i messaggi
     */
   def sendMessage(triplet: EdgeTriplet[KCoreVertex, Map[VertexId, Int]]) = {
-    if (triplet.srcAttr.oldCoreness != triplet.srcAttr.coreness || triplet.attr == dummyMessage) {
-      if (triplet.srcAttr.nodeId == 13) {
-        println(triplet.srcAttr.oldCoreness)
-        println(triplet.srcAttr.coreness)
-      }
+    if (triplet.srcAttr.updated || triplet.attr == dummyMessage) {
       Iterator((triplet.dstId, Map(triplet.srcAttr.nodeId -> triplet.srcAttr.coreness)))
     } else {
       Iterator.empty

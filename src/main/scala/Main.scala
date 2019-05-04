@@ -4,31 +4,20 @@ import org.apache.spark._
 import org.apache.log4j._
 import org.apache.spark.sql.SparkSession
 import java.util.{Calendar, Date}
-
+import java.io.PrintWriter
 
 object Main {
-  var totmsg: BigInt = 0
-
-  //val files = Map("facebook" -> "s3n://scpproject/facebook.txt", "pokec" -> "s3n://scpproject/pokec.txt", "livejournal" -> "s3n://scpproject/livejournal.txt")
-  val files = Map("facebook" -> "resources/facebook.txt", "pokec" -> "resources/pokec.txt", "livejournal" -> "resources/livejournal.txt")
+  val files = Map("facebook" -> "s3n://scpproject/input/facebook.txt", "pokec" -> "s3n://scpproject/input/pokec.txt", "livejournal" -> "s3n://scpproject/input/livejournal.txt")
+  // val files = Map("facebook" -> "resources/facebook.txt", "pokec" -> "resources/pokec.txt", "livejournal" -> "resources/livejournal.txt", "test" -> "resources/test.txt")
 
   def main(args: Array[String]) {
     val startTimeStamp = new Date().getTime
-    var currentFile = "facebook"
+    var currentFile = "test"
     val appName = "KCoreDecomposition"
     val sparkConf = new SparkConf().setAppName(appName)
-    var numberOfExecutors = 1
-    println(args.size)
     if (args.size > 0) {
       currentFile = args(0)
     }
-    if (args.size == 2) {
-      numberOfExecutors = args(1).toInt
-      sparkConf.setAppName(appName + "_" + numberOfExecutors)
-    }  else {
-      sparkConf.setMaster("local[*]")
-    }
-
 
     val fileName = files.get(currentFile).get
     // Set the log level to only print errors
@@ -48,10 +37,12 @@ object Main {
     val graph = new GraphReader().readFile(fileName, session.sparkContext)
 
     val kCore = DistributedKCore.decomposeGraph(graph, maxIterations)
-    //kCore.vertices.sortBy(_._2.coreness).saveAsTextFile("s3n://scpproject/output_" + currentFile + ".txt")
-    kCore.vertices.sortBy(_._2.coreness).saveAsTextFile("resources/output/" + appName + "/" + numberOfExecutors + "/" + startTimeStamp)
-    kCore.vertices.foreach(x => totmsg = totmsg + x._2.receivedMsg);
-    println("Total messages in this execution = " + totmsg)
+    val outputDestination = "s3n://scpproject/output/" + appName + "/" + currentFile + "/" + startTimeStamp
+    kCore.vertices.sortBy(_._2.coreness).saveAsTextFile(outputDestination)
+    // kCore.vertices.sortBy(_._2.coreness).saveAsTextFile("resources/output/" + appName + "/" + currentFile + "/" + startTimeStamp)
+    val totmsg = kCore.vertices.map(x => x._2.receivedMsg).sum()
+    val outputMsg = "Total messages in this execution = " + totmsg
+    println(outputMsg)
     session.close()
   }
 }

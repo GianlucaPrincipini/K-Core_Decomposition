@@ -52,7 +52,7 @@ class GraphReader extends Serializable {
     * @return tupla di interi
     */
   def split(line: String, inverted: Boolean): Edge[Map[VertexId, Int]] = {
-    val splitted = line.split(" ")
+    val splitted = line.split("[ \\t]")
     if (inverted){
       new Edge(splitted(1).toLong, splitted(0).toLong, Map(splitted(1).toLong -> Int.MaxValue))
     }

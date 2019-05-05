@@ -23,6 +23,11 @@ import scala.graph.KCoreVertex
 object DistributedKCore {
   val dummyMessage: String = Long.MinValue + "->-1"
 
+  def toTuple(str: String) = {
+    val splitted = str.split("->")
+    (splitted(0).toLong.asInstanceOf[VertexId], splitted(1).toInt)
+  }
+
   /**
     * Definisce il comportamento di un nodo in ogni superciclo.
     * Nello specifico a ogni turno, il nodo esamina la propria coda di messaggi, e se
@@ -41,21 +46,16 @@ object DistributedKCore {
     nVertex.est = attr.est
     nVertex.iterationToConverge = attr.iterationToConverge
 
-    val msg = stringMsg.split(';')
-    if (stringMsg != dummyMessage && msg.size > 0) {
+    val msg = stringMsg.split(';').toSet
+    msg.map(toTuple).filter(tuple => !nVertex.est.contains(tuple._1)).foreach(tuple => {
+      // Se la nuova stima è più bassa di quella presente
+      nVertex.est = nVertex.est + (tuple._1 -> Int.MaxValue)
+    })
+    if (stringMsg != dummyMessage && msg.nonEmpty) {
       nVertex.incReceived(msg.size)
-      msg.foreach(tupleToSplit => {
-        val splitted = tupleToSplit.split("->")
-        val tuple = (splitted(0).toLong, splitted(1).toInt)
+      msg.map(toTuple).foreach(tuple => {
         // Se la nuova stima è più bassa di quella presente
-        if (tuple._2 < nVertex.est.getOrElse(tuple._1, Int.MaxValue)) {
-          if (id == 1890 && tuple._1 == 107) {
-            println(tuple._1)
-            println("coreness"+nVertex.coreness)
-            println("old"+nVertex.est.getOrElse(tuple._1, Int.MaxValue))
-            println("new"+tuple._2)
-            println()
-          }
+        if (tuple._2 < nVertex.est.getOrElse(tuple._1, nVertex.est(tuple._1))) {
           nVertex.est = nVertex.est + (tuple._1 -> tuple._2)
           val computedCoreness = nVertex.computeIndex()
           if (computedCoreness < nVertex.coreness) {
@@ -69,6 +69,7 @@ object DistributedKCore {
     }
     if (nVertex.updated) {
       nVertex.iterationToConverge = nVertex.iterationToConverge + 1
+      // nVertex.est.foreach(println)
     }
     nVertex
   }

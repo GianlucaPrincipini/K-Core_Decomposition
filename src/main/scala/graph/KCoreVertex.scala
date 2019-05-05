@@ -36,8 +36,6 @@ class KCoreVertex(id: VertexId) extends Serializable {
     est.foreach(tuple => {
       val j = Math.min(coreness, tuple._2)
       count(j) = count(j) + 1
-      if (this.nodeId == 107)
-        println("corenessInCompute " + coreness + "tuple2 " + tuple._2 + "count " + count(j))
     })
     //nel vettore di supporto conto quante occorrenze ci sono con lo stesso valore dell'indice
     var i = coreness

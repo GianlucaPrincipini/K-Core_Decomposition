@@ -36,7 +36,6 @@ object DistributedKCore {
   def vertexProgram(id: VertexId, attr: KCoreVertex, msg: Map[VertexId, Int]) = {
     val nVertex = new KCoreVertex(id)
     nVertex.updated = false
-    nVertex.oldCoreness = attr.oldCoreness
     nVertex.coreness = attr.coreness
     nVertex.receivedMsg = attr.receivedMsg
     nVertex.est = attr.est
@@ -50,7 +49,6 @@ object DistributedKCore {
           nVertex.est = nVertex.est + (tuple._1 -> tuple._2)
           val computedCoreness = nVertex.computeIndex()
           if (computedCoreness < nVertex.coreness) {
-            nVertex.oldCoreness = nVertex.coreness
             nVertex.coreness = computedCoreness
             nVertex.updated = true
           }
@@ -58,6 +56,7 @@ object DistributedKCore {
       })
     } else {
       nVertex.updated = true
+      nVertex.coreness = nVertex.est.keys.size
     }
     if (nVertex.updated) {
       nVertex.iterationToConverge = nVertex.iterationToConverge + 1

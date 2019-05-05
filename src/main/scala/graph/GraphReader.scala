@@ -13,21 +13,6 @@ import scala.collection.immutable.HashMap
 class GraphReader extends Serializable {
 
   /**
-    * Inizializzazione del KCoreVertex, la coreness iniziale è il suo grado.
-    * la stima della coreness dei vicini viene inizializzata al valore massimo
-    * @param vertex
-    * @param degreesMap
-    * @return
-    */
-  def initializeKCoreVertex(vertex: KCoreVertex, neighbors: Map[VertexId, Array[VertexId]]) = {
-    vertex.est = new HashMap[VertexId, Int]()
-    val vertexNeighbors = neighbors.getOrElse(vertex.nodeId, null)
-    vertexNeighbors.foreach(neighborId => vertex.est ++= Map(neighborId -> Int.MaxValue))
-    vertex.coreness = vertex.est.keys.size
-    vertex
-  }
-
-  /**
     * Nel file le associazioni sono monodirezionali, per rendere bidirezionale ogni arco abbiamo ripetuto la procedura su
     * @param fileName
     * @return
@@ -37,11 +22,17 @@ class GraphReader extends Serializable {
     val file = sc.textFile(fileName).cache()
     val graph1 = file.map(x => split(x, false))
     val undirectedGraph = graph1.union(sc.textFile(fileName).map(x => split(x, true)))
-    val keys: RDD[(VertexId, KCoreVertex)] = undirectedGraph.map(x => (x.srcId, new KCoreVertex(x.srcId))).distinct()
+    val keys: RDD[(VertexId, KCoreVertex)] = undirectedGraph.map(x => (x.srcId, new KCoreVertex(x.srcId)))
     val graph = Graph[KCoreVertex, Map[VertexId, Int]](keys, undirectedGraph)
-    val neighbors = graph.collectNeighborIds(EdgeDirection.Out).collectAsMap()
-    val retGraph = graph.mapVertices((vertexId, vertexStruct) => initializeKCoreVertex(vertexStruct, neighbors))
-    retGraph
+    val neighbors = graph.collectNeighborIds(EdgeDirection.Out)
+      .flatMapValues(id => id.map(neighbor => Map(neighbor -> Int.MaxValue)))
+    val neighborToMaxInt = neighbors.reduceByKey((a, b) => a ++ b)
+    println("File loaded, initializing vertices")
+    graph.joinVertices(neighborToMaxInt)((id, bla, b) => {
+      bla.est = b;
+      bla
+    })
+    // println(joined)
   }
 
 

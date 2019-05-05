@@ -7,10 +7,11 @@ import java.util.{Calendar, Date}
 import java.io.PrintWriter
 
 object Main {
-  val files = Map("facebook" -> "s3n://scpproject/input/facebook.txt", "pokec" -> "s3n://scpproject/input/pokec.txt", "livejournal" -> "s3n://scpproject/input/livejournal.txt")
   // val files = Map("facebook" -> "resources/facebook.txt", "pokec" -> "resources/pokec.txt", "livejournal" -> "resources/livejournal.txt", "test" -> "resources/test.txt")
 
   def main(args: Array[String]) {
+    // val fileLocation = "s3n://scpproject/input/"
+    val fileLocation = "resources/"
     val startTimeStamp = new Date().getTime
     var currentFile = "test"
     val appName = "KCoreDecomposition"
@@ -18,8 +19,8 @@ object Main {
     if (args.size > 0) {
       currentFile = args(0)
     }
-
-    val fileName = files.get(currentFile).get
+    sparkConf.setMaster("local[*]")
+    val fileName = fileLocation + currentFile + ".txt"
     // Set the log level to only print errors
     Logger.getLogger("org").setLevel(Level.ERROR)
 
@@ -32,14 +33,14 @@ object Main {
     }
     val session = sessionBuilder.getOrCreate()
 
-    val maxIterations = 10
+    val maxIterations = 50
 
     val graph = new GraphReader().readFile(fileName, session.sparkContext)
 
     val kCore = DistributedKCore.decomposeGraph(graph, maxIterations)
-    val outputDestination = "s3n://scpproject/output/" + appName + "/" + currentFile + "/" + startTimeStamp
+    // val outputDestination = "s3n://scpproject/output/" + appName + "/" + currentFile + "/" + startTimeStamp
+    val outputDestination = "resources/output/" + appName + "/" + currentFile + "/" + startTimeStamp
     kCore.vertices.sortBy(_._2.coreness).saveAsTextFile(outputDestination)
-    // kCore.vertices.sortBy(_._2.coreness).saveAsTextFile("resources/output/" + appName + "/" + currentFile + "/" + startTimeStamp)
     val totmsg = kCore.vertices.map(x => x._2.receivedMsg).sum()
     val outputMsg = "Total messages in this execution = " + totmsg
     println(outputMsg)

@@ -3,18 +3,12 @@ package scala.graph
 import org.apache.spark.graphx.VertexId
 
 import scala.collection.Map
-
-object Foo{
-  private var current = 0
-  def inc = {current += 1; current}
-}
+import scala.collection.immutable.HashMap
 
 class KCoreVertex(id: VertexId) extends Serializable {
-  val objId = Foo.inc
   val nodeId = id
   var updated = false
-  var oldCoreness = 0;
-  var est: Map[VertexId, Int] = null
+  var est: Map[VertexId, Int] = new HashMap[VertexId, Int]()
   var coreness = 0
   var receivedMsg = 0
   var iterationToConverge = 0
@@ -61,7 +55,7 @@ class KCoreVertex(id: VertexId) extends Serializable {
     * Informazioni che caratterizzano il nodo: identificativo e coreness
     * @return
     */
-  override def toString: String = "\tCoreness:\t" + coreness + "\tReceived messages:\t" + receivedMsg + "\tDegree:\t" + est.size + "\tIterations to converge:\t" + iterationToConverge + "\tupdated: " + updated
+  override def toString: String = "\tCoreness:\t" + coreness + "\tReceived messages:\t" + receivedMsg + "\tDegree:\t" + est.size + "\tIterations to converge:\t" + iterationToConverge
 
   def incReceived(dim: Int) = {
     receivedMsg = receivedMsg + dim

@@ -10,15 +10,16 @@ object Main {
   // val files = Map("facebook" -> "resources/facebook.txt", "pokec" -> "resources/pokec.txt", "livejournal" -> "resources/livejournal.txt", "test" -> "resources/test.txt")
 
   def main(args: Array[String]) {
-    val fileLocation = "s3n://scpproject/input/"
-    // val fileLocation = "resources/"
+    // val fileLocation = "s3n://scpproject/input/"
+    val fileLocation = "resources/"
     val startTimeStamp = new Date().getTime
-    var currentFile = "twitter"
+    var currentFile = "facebook"
     val appName = "KCoreDecomposition"
     val sparkConf = new SparkConf().setAppName(appName)
     if (args.size > 0) {
       currentFile = args(0)
     }
+    sparkConf.setMaster("local[*]")
     val fileName = fileLocation + currentFile + ".txt"
     // Set the log level to only print errors
     Logger.getLogger("org").setLevel(Level.ERROR)
@@ -37,8 +38,8 @@ object Main {
     val graph = new GraphReader().readFile(fileName, session.sparkContext)
 
     val kCore = DistributedKCore.decomposeGraph(graph, maxIterations)
-    val outputDestination = "s3n://scpproject/output/" + appName + "/" + currentFile + "/" + startTimeStamp
-    // val outputDestination = "resources/output/" + appName + "/" + currentFile + "/" + startTimeStamp
+    // val outputDestination = "s3n://scpproject/output/" + appName + "/" + currentFile + "/" + startTimeStamp
+    val outputDestination = "resources/output/" + appName + "/" + currentFile + "/" + startTimeStamp
     kCore.vertices.sortBy(_._2.coreness).saveAsTextFile(outputDestination)
     val totmsg = kCore.vertices.map(x => x._2.receivedMsg).sum()
     val outputMsg = "Total messages in this execution = " + totmsg

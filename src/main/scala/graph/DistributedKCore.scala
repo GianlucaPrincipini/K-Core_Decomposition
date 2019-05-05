@@ -21,7 +21,7 @@ import scala.graph.KCoreVertex
   * anche conto della bidirezionalita' del grafo.
   */
 object DistributedKCore {
-  val dummyMessage: Map[VertexId, Int] = Map(Long.MinValue -> -1)
+  val dummyMessage: String = Long.MinValue + "->-1"
 
   /**
     * Definisce il comportamento di un nodo in ogni superciclo.
@@ -33,19 +33,29 @@ object DistributedKCore {
     * @param msg la coda dei messaggi
     * @return l'oggetto del nodo, aggiornato
     */
-  def vertexProgram(id: VertexId, attr: KCoreVertex, msg: Map[VertexId, Int]) = {
+  def vertexProgram(id: VertexId, attr: KCoreVertex, stringMsg: String) = {
     val nVertex = new KCoreVertex(id)
     nVertex.updated = false
     nVertex.coreness = attr.coreness
     nVertex.receivedMsg = attr.receivedMsg
     nVertex.est = attr.est
     nVertex.iterationToConverge = attr.iterationToConverge
-    
-    if (msg != dummyMessage && msg.size > 0) {
+
+    val msg = stringMsg.split(';')
+    if (stringMsg != dummyMessage && msg.size > 0) {
       nVertex.incReceived(msg.size)
-      msg.foreach(tuple => {
+      msg.foreach(tupleToSplit => {
+        val splitted = tupleToSplit.split("->")
+        val tuple = (splitted(0).toLong, splitted(1).toInt)
         // Se la nuova stima è più bassa di quella presente
-        if (tuple._2 < nVertex.est.get(tuple._1).get) {
+        if (tuple._2 < nVertex.est.getOrElse(tuple._1, Int.MaxValue)) {
+          if (id == 1890 && tuple._1 == 107) {
+            println(tuple._1)
+            println("coreness"+nVertex.coreness)
+            println("old"+nVertex.est.getOrElse(tuple._1, Int.MaxValue))
+            println("new"+tuple._2)
+            println()
+          }
           nVertex.est = nVertex.est + (tuple._1 -> tuple._2)
           val computedCoreness = nVertex.computeIndex()
           if (computedCoreness < nVertex.coreness) {
@@ -56,7 +66,6 @@ object DistributedKCore {
       })
     } else {
       nVertex.updated = true
-      nVertex.coreness = nVertex.est.keys.size
     }
     if (nVertex.updated) {
       nVertex.iterationToConverge = nVertex.iterationToConverge + 1
@@ -69,9 +78,9 @@ object DistributedKCore {
     * @param triplet la rappresentazione a triple dei destinatari e dei loro messaggi
     * @return un iteratore sulla struttura contenente i messaggi
     */
-  def sendMessage(triplet: EdgeTriplet[KCoreVertex, Map[VertexId, Int]]) = {
+  def sendMessage(triplet: EdgeTriplet[KCoreVertex, String]) = {
     if (triplet.srcAttr.updated || triplet.attr == dummyMessage) {
-      Iterator((triplet.dstId, Map(triplet.srcAttr.nodeId -> triplet.srcAttr.coreness)))
+      Iterator((triplet.dstId, triplet.srcAttr.nodeId + "->" + triplet.srcAttr.coreness))
     } else {
       Iterator.empty
     }
@@ -83,8 +92,8 @@ object DistributedKCore {
     * @param msg2 secondo insieme di messaggi
     * @return dizionario contenente tutti i messaggi
     */
-  def mergeMessages(msg1: Map[VertexId, Int], msg2: Map[VertexId, Int]) = {
-    msg1 ++ msg2
+  def mergeMessages(msg1: String, msg2: String) = {
+    msg1 + ";" + msg2
   }
 
   /**
@@ -93,7 +102,7 @@ object DistributedKCore {
     * @param maxIterations il numero di supercicli da eseguire (si consiglia >=40)
     * @return il grafo a computazione eseguita
     */
-  def decomposeGraph(graph: Graph[KCoreVertex, Map[VertexId, Int]], maxIterations: Int) = {
+  def decomposeGraph(graph: Graph[KCoreVertex, String], maxIterations: Int) = {
     graph.pregel(dummyMessage, maxIterations = maxIterations, EdgeDirection.In)(
       (id, attr, msg) => vertexProgram(id, attr, msg),
       triplet => sendMessage(triplet),

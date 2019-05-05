@@ -8,7 +8,7 @@ import scala.collection.immutable.HashMap
 class KCoreVertex(id: VertexId) extends Serializable {
   val nodeId = id
   var updated = false
-  var est: Map[VertexId, Int] = new HashMap[VertexId, Int]()
+  var est: Map[VertexId, Int] = Map[VertexId, Int]()
   var coreness = 0
   var receivedMsg = 0
   var iterationToConverge = 0
